@@ -7,10 +7,15 @@
 L.TileLayer.Iiif = L.TileLayer.extend({
   options: {
     continuousWorld: true,
-    tileSize: 256,
+    tileSize: false,
     updateWhenIdle: true,
     tileFormat: 'jpg',
-    fitBounds: true
+    fitBounds: true,
+    bestFit: false,
+    marginTop: 0,
+    marginRight: 0,
+    marginBottom: 0,
+    marginLeft: 0
   },
 
   initialize: function(url, options) {
@@ -56,7 +61,7 @@ L.TileLayer.Iiif = L.TileLayer.extend({
       quality: _this.quality,
       region: [minx, miny, xDiff, yDiff].join(','),
       rotation: 0,
-      size: Math.ceil(xDiff / scale) + ','
+      size: _this._iiifSizeParam(Math.ceil(xDiff / scale), Math.ceil(yDiff / scale))
     }, this.options));
   },
   onAdd: function(map) {
@@ -95,12 +100,22 @@ L.TileLayer.Iiif = L.TileLayer.extend({
 
     // Find best zoom level and center map
     var initialZoom = _this._getInitialZoom(_this._map.getSize());
-    var imageSize = _this._imageSizes[initialZoom];
-    var sw = _this._map.options.crs.pointToLatLng(L.point(0, imageSize.y), initialZoom);
-    var ne = _this._map.options.crs.pointToLatLng(L.point(imageSize.x, 0), initialZoom);
+    var imageSize = _this._getImageSize(initialZoom);
+
+    var margins = this._calculateMargins(imageSize);
+
+    var sw = _this._map.options.crs.pointToLatLng(L.point(0, imageSize.y + margins.bottom), initialZoom);
+    var ne = _this._map.options.crs.pointToLatLng(L.point(imageSize.x + margins.left, 0), initialZoom);
     var bounds = L.latLngBounds(sw, ne);
 
-    _this._map.fitBounds(bounds, true);
+    if ( this.options.bestFit ) {
+      this._map.options.minZoom = initialZoom;
+      _this._map.fitBounds(bounds); // what does true do?
+      _this._map.setMaxBounds(bounds);
+      _this._map.setMaxZoom(_this.maxNativeZoom);
+    } else {
+      _this._map.fitBounds(bounds, true);
+    }
   },
   _getInfo: function() {
     var _this = this;
@@ -220,10 +235,83 @@ L.TileLayer.Iiif = L.TileLayer.extend({
       return true;
     }
   },
+  _iiifSizeParam: function(x, y) {
+    if ( x && x > this.options.tileSize ) { x = this.options.tileSize; }
+    if ( y && y > this.options.tileSize ) { y = this.options.tileSize; }
+    if (x >= y) {
+      return x + ',';
+    } else {
+      return ',' + y;
+    }
+  },
+  _calculateMargins: function(imageSize) {
+    var margins = { top: 0, right: 0, bottom: 0, left: 0};
+    if ( this.options.marginBottom ) {
+      margins.bottom = imageSize.y * this.options.marginBottom;
+    }
+    if ( this.options.marginLeft ) {
+      margins.left = imageSize.x * this.options.marginLeft;
+    }
+    return margins;
+  },
+  _getImageSize: function(initialZoom) {
+    var _this = this;
+    var imageSize = _this._imageSizes[initialZoom];
+    if ( imageSize === undefined ) {
+      imageSize = {};
+      var scale = Math.pow(2, _this.maxNativeZoom - initialZoom);
+      imageSize.y = _this.y / scale;
+      imageSize.x = _this.x / scale;
+    }
+    return imageSize;
+  },
+  _getInitialBestFitZoom: function(mapSize) {
+    var _this = this,
+      tolerance = 0.8,
+      tuning_delta = 0.125,
+      imageSize,
+      key;
+
+    tolerance = 1.0;
+
+    key = this._imageSizes[0].x > this._imageSizes[0].y ? 'x' : 'y';
+    var other_key = key == 'x' ? 'y' : 'x';
+
+    for (var i = _this.maxNativeZoom; i >= 0; i--) {
+      imageSize = this._imageSizes[i];
+      if (imageSize[key] * tolerance < mapSize[key] ) {
+        var d = imageSize[key];
+        var e = imageSize[other_key];
+        var j = 0;
+
+        // checking e would be the BEST FIT WITHIN THE RECTANGLE
+        // without e it's just BEST FIT on the longest dimension
+
+        var fit_height = function() {
+          return d * ( 1.0 + j ) < mapSize[key];
+        }
+
+        var fit_rect = function() {
+          return d * ( 1.0 + j ) < mapSize[key] && e * ( 1.0 + j ) < mapSize[other_key];
+        }
+
+        var fn = fit_rect;
+
+        while ( fn() ) {          
+          j += tuning_delta;
+        }
+        return i + j;
+      }
+    }
+    // return a default zoom
+    return 2;
+  },
   _getInitialZoom: function (mapSize) {
     var _this = this,
       tolerance = 0.8,
       imageSize;
+
+    if ( this.options.bestFit ) { return this._getInitialBestFitZoom(mapSize); }
 
     for (var i = _this.maxNativeZoom; i >= 0; i--) {
       imageSize = this._imageSizes[i];
