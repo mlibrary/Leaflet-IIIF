@@ -36,6 +36,10 @@ L.TileLayer.Iiif = L.TileLayer.extend({
       this._explicitQuality = true;
     }
 
+    if ( location.hash.indexOf('debug') > -1 ) {
+      options.bestFit = false;
+    }
+
     options = L.setOptions(this, options);
     this._infoDeferred = new $.Deferred();
     this._infoUrl = url;
@@ -114,6 +118,11 @@ L.TileLayer.Iiif = L.TileLayer.extend({
   },
   _fitBounds: function() {
     var _this = this;
+
+    if ( _this.options.bestFit && ( _this.x < _this._map.x ) && ( _this.y < _this._map.y ) ) {
+      // disable bestFit
+      _this.options.bestFit = false;
+    }
 
     // Find best zoom level and center map
     var initialZoom = _this._getInitialZoom(_this._map.getSize());
