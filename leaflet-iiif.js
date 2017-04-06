@@ -98,6 +98,11 @@ L.TileLayer.Iiif = L.TileLayer.extend({
   _fitBounds: function() {
     var _this = this;
 
+    if ( _this.options.bestFit && ( _this.x < _this._map.x ) && ( _this.y < _this._map.y ) ) {
+      // disable bestFit
+      _this.options.bestFit = false;
+    }
+
     // Find best zoom level and center map
     var initialZoom = _this._getInitialZoom(_this._map.getSize());
     var imageSize = _this._getImageSize(initialZoom);
