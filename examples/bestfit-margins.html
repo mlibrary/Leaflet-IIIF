@@ -20,8 +20,7 @@
         zoom: 0
       });
 
-      // http://quod.lib.umich.edu/a/apis/x-3556/6238_33.tif
-      var layer = L.tileLayer.iiif("http://quod.lib.umich.edu/cgi/i/image/api/image/apis:3556:6238_33/info.json", 
+      var layer = L.tileLayer.iiif("https://quod.lib.umich.edu/cgi/i/image/api/image/apis:3556:6238_33/info.json", 
         { bestFit: true, marginLeft: 0.25, marginBottom: 0.25 } 
       );
       layer.addTo(map);
