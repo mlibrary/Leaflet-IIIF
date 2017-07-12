@@ -11,7 +11,7 @@ L.TileLayer.Iiif = L.TileLayer.extend({
     updateWhenIdle: true,
     tileFormat: 'jpg',
     fitBounds: true,
-    setMaxBounds: false
+    setMaxBounds: false,
     bestFit: false,
     marginTop: 0,
     marginRight: 0,
