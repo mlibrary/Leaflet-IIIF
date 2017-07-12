@@ -138,15 +138,19 @@ L.TileLayer.Iiif = L.TileLayer.extend({
     var ne = _this._map.options.crs.pointToLatLng(L.point(imageSize.x + margins.left, 0), initialZoom);
     var bounds = L.latLngBounds(sw, ne);
 
+    var boundsOptions = {
+      paddingTopLeft: [ margins.left, margins.top ],
+      paddingBottomRight: [ margins.right, margins.bottom ]
+    };
+
     if ( this.options.bestFit ) {
       this._map.options.zoomSnap = 0.0;
       this._map.options.zoomDelta = 0.5;
       this._map.options.minZoom = initialZoom;
-      _this._map.fitBounds(bounds); // what does true do?
-      _this._map.setMaxZoom(_this.maxNativeZoom);
-    } else {
-      _this._map.fitBounds(bounds, true);
+      boundsOptions.maxZoom = _this.maxNativeZoom;
     }
+
+    _this._map.fitBounds(bounds, boundsOptions);
   },
   _setMaxBounds: function() {
     var _this = this;
