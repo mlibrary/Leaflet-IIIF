@@ -36,6 +36,10 @@ L.TileLayer.Iiif = L.TileLayer.extend({
       this._explicitQuality = true;
     }
 
+    if (options.bestFit) {
+      this.sexMaxBounds = true;
+    }
+
     if ( location.hash.indexOf('debug') > -1 ) {
       options.bestFit = false;
     }
@@ -139,7 +143,7 @@ L.TileLayer.Iiif = L.TileLayer.extend({
       this._map.options.zoomDelta = 0.5;
       this._map.options.minZoom = initialZoom;
       _this._map.fitBounds(bounds); // what does true do?
-      _this._map.setMaxBounds(bounds);
+      // _this._map.setMaxBounds(bounds);
       _this._map.setMaxZoom(_this.maxNativeZoom);
     } else {
       _this._map.fitBounds(bounds, true);
