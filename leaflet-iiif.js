@@ -135,6 +135,8 @@ L.TileLayer.Iiif = L.TileLayer.extend({
     var bounds = L.latLngBounds(sw, ne);
 
     if ( this.options.bestFit ) {
+      this._map.options.zoomSnap = 0.0;
+      this._map.options.zoomDelta = 0.5;
       this._map.options.minZoom = initialZoom;
       _this._map.fitBounds(bounds); // what does true do?
       _this._map.setMaxBounds(bounds);
@@ -163,6 +165,8 @@ L.TileLayer.Iiif = L.TileLayer.extend({
       .done(function(data) {
         _this.y = data.height;
         _this.x = data.width;
+        _this._id = data['@id'];
+        _this._baseUrl = _this._templateUrl();
 
         var tierSizes = [],
           imageSizes = [],
@@ -254,7 +258,7 @@ L.TileLayer.Iiif = L.TileLayer.extend({
   },
 
   _infoToBaseUrl: function() {
-    return this._infoUrl.replace('info.json', '');
+    return this._id ? (this._id + '/') : this._infoUrl.replace('info.json', '');
   },
   _templateUrl: function() {
     return this._infoToBaseUrl() + '{region}/{size}/{rotation}/{quality}.{format}';
@@ -305,44 +309,16 @@ L.TileLayer.Iiif = L.TileLayer.extend({
   },
   _getInitialBestFitZoom: function(mapSize) {
     var _this = this,
-      tolerance = 0.8,
-      tuning_delta = 0.125,
       imageSize,
       key;
 
-    tolerance = 1.0;
+    imageSize = this._imageSizes[this.maxNativeZoom];
+    key = imageSize.x > imageSize.y ? 'x' : 'y';
 
-    key = this._imageSizes[0].x > this._imageSizes[0].y ? 'x' : 'y';
-    var other_key = key == 'x' ? 'y' : 'x';
-
-    for (var i = _this.maxNativeZoom; i >= 0; i--) {
-      imageSize = this._imageSizes[i];
-      if (imageSize[key] * tolerance < mapSize[key] ) {
-        var d = imageSize[key];
-        var e = imageSize[other_key];
-        var j = 0;
-
-        // checking e would be the BEST FIT WITHIN THE RECTANGLE
-        // without e it's just BEST FIT on the longest dimension
-
-        var fit_height = function() {
-          return d * ( 1.0 + j ) < mapSize[key];
-        }
-
-        var fit_rect = function() {
-          return d * ( 1.0 + j ) < mapSize[key] && e * ( 1.0 + j ) < mapSize[other_key];
-        }
-
-        var fn = fit_rect;
-
-        while ( fn() ) {          
-          j += tuning_delta;
-        }
-        return i + j;
-      }
-    }
-    // return a default zoom
-    return 2;
+    var fraction = imageSize[key] / mapSize[key];
+    var exp = Math.log2(fraction);
+    if ( exp >= 0 ) { return this.maxNativeZoom - exp; }
+    return this.maxNativeZoom;
   },
   _getInitialZoom: function (mapSize) {
     var _this = this,
