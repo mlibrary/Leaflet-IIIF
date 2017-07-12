@@ -37,7 +37,7 @@ L.TileLayer.Iiif = L.TileLayer.extend({
     }
 
     if (options.bestFit) {
-      this.sexMaxBounds = true;
+      options.setMaxBounds = true;
     }
 
     if ( location.hash.indexOf('debug') > -1 ) {
@@ -143,7 +143,6 @@ L.TileLayer.Iiif = L.TileLayer.extend({
       this._map.options.zoomDelta = 0.5;
       this._map.options.minZoom = initialZoom;
       _this._map.fitBounds(bounds); // what does true do?
-      // _this._map.setMaxBounds(bounds);
       _this._map.setMaxZoom(_this.maxNativeZoom);
     } else {
       _this._map.fitBounds(bounds, true);
@@ -154,7 +153,7 @@ L.TileLayer.Iiif = L.TileLayer.extend({
 
     // Find best zoom level, center map, and constrain viewer
     var initialZoom = _this._getInitialZoom(_this._map.getSize());
-    var imageSize = _this._imageSizes[initialZoom];
+    var imageSize = _this._getImageSize(initialZoom);
     var sw = _this._map.options.crs.pointToLatLng(L.point(0, imageSize.y), initialZoom);
     var ne = _this._map.options.crs.pointToLatLng(L.point(imageSize.x, 0), initialZoom);
     var bounds = L.latLngBounds(sw, ne);
