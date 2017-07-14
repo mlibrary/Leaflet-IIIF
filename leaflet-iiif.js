@@ -102,7 +102,10 @@ L.TileLayer.Iiif = L.TileLayer.extend({
 
         // No need to resize if tile is 256 x 256
         if (height === 256 && width === 256 && ! _this.options.fractionalZoomPatch) return;
-        if ( _this.options.fractionalZoomPatch && _this._map.getZoom() != Math.ceil(_this._map.getZoom()) ) {
+        // ideally wouldn't need the patch for integer zoom, but fast scrolling loads tiles on integer zoom
+        // then has seams on the final fractional zoom
+        // && _this._map.getZoom() != Math.ceil(_this._map.getZoom())
+        if ( _this.options.fractionalZoomPatch ) {
           height += 1;
           width += 1;
         }
