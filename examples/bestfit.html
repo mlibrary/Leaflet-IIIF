@@ -23,6 +23,9 @@
       var info_url = "https://quod.lib.umich.edu/cgi/i/image/api/image/apis:3556:6238_33/info.json";
       if ( location.search ) {
         info_url = location.search.substr(1);
+        if ( info_url.indexOf("/info.json") < 0 ) {
+          info_url += "/info.json";
+        }
       }
       var layer = L.tileLayer.iiif(info_url, { bestFit: true } );
       layer.addTo(map);
