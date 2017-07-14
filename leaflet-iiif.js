@@ -13,6 +13,7 @@ L.TileLayer.Iiif = L.TileLayer.extend({
     fitBounds: true,
     setMaxBounds: false,
     bestFit: false,
+    fractionalZoomPatch: true,
     marginTop: 0,
     marginRight: 0,
     marginBottom: 0,
@@ -100,7 +101,11 @@ L.TileLayer.Iiif = L.TileLayer.extend({
           width = tile.tile.naturalWidth;
 
         // No need to resize if tile is 256 x 256
-        if (height === 256 && width === 256) return;
+        if (height === 256 && width === 256 && ! _this.options.fractionalZoomPatch) return;
+        if ( _this.options.fractionalZoomPatch && _this._map.getZoom() != Math.ceil(_this._map.getZoom()) ) {
+          height += 1;
+          width += 1;
+        }
 
         tile.tile.style.width = width + 'px';
         tile.tile.style.height = height + 'px';
@@ -324,7 +329,14 @@ L.TileLayer.Iiif = L.TileLayer.extend({
 
     var fraction = imageSize[key] / mapSize[key];
     var exp = Math.log2(fraction);
-    if ( exp >= 0 ) { return this.maxNativeZoom - exp; }
+    if ( exp >= 0 ) {
+      var zoom = this.maxNativeZoom - exp,
+          original_zoom = zoom;
+
+      // round the zoom for simpler processing
+      zoom = Math.round(zoom * 100) / 100;
+      return zoom;
+    }
     return this.maxNativeZoom;
   },
   _getInitialZoom: function (mapSize) {
